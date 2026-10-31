@@ -1,0 +1,1003 @@
+{
+  "info": {
+    "name": "ParkGrid API",
+    "description": "Smart Parking Management System \u2014 CODESPARK Hackathon 2026, Problem #01.\n\nRun order: 1) Login (USER) \u2014 saves {{token}}. 2) Pricing & Booking folder. 3) Login (ADMIN) before the Admin folder \u2014 saves {{adminToken}}. Example datetimes live in the {{startTime}}/{{endTime}} collection variables \u2014 keep them in the future. See docs/POSTMAN.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "locationId",
+      "value": "1"
+    },
+    {
+      "key": "slotId",
+      "value": "1"
+    },
+    {
+      "key": "vehicleId",
+      "value": "1"
+    },
+    {
+      "key": "reservationId",
+      "value": "1"
+    },
+    {
+      "key": "waitlistId",
+      "value": "1"
+    },
+    {
+      "key": "startTime",
+      "value": "2026-11-05T10:00:00"
+    },
+    {
+      "key": "endTime",
+      "value": "2026-11-05T12:00:00"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Public. Always creates a USER account. 409 if the email is already registered.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Demo User\",\n  \"email\": \"demo@example.com\",\n  \"password\": \"demo123\",\n  \"phone\": \"9999999999\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Login (USER) \u2014 run first",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Saves the returned JWT into the {{token}} collection variable (test script). Seeded user; owns vehicle 1 (TS09AB1234).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user1@example.com\",\n  \"password\": \"user123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var j = pm.response.json();",
+                  "if (j && j.token) { pm.collectionVariables.set('token', j.token); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Saves the admin JWT into {{adminToken}}. Run before the Admin folder.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@smartparking.local\",\n  \"password\": \"admin123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var j = pm.response.json();",
+                  "if (j && j.token) { pm.collectionVariables.set('adminToken', j.token); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get current user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Returns the profile behind {{token}}."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Locations & Slots",
+      "item": [
+        {
+          "name": "List locations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/locations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "locations"
+              ]
+            },
+            "description": "Seeded: 1 = KL University Main Gate Parking (\u20b930/hr), 2 = City Center Mall Parking (\u20b950/hr). Includes averageRating/reviewCount."
+          }
+        },
+        {
+          "name": "Get location",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/locations/{{locationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "locations",
+                "{{locationId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Slots of a location (slot map data)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/locations/{{locationId}}/slots",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "locations",
+                "{{locationId}}",
+                "slots"
+              ]
+            },
+            "description": "Each slot carries its live DERIVED status: AVAILABLE / RESERVED / OCCUPIED."
+          }
+        },
+        {
+          "name": "Availability for a window",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/slots/availability?locationId={{locationId}}&startTime={{startTime}}&endTime={{endTime}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "slots",
+                "availability"
+              ],
+              "query": [
+                {
+                  "key": "locationId",
+                  "value": "{{locationId}}"
+                },
+                {
+                  "key": "startTime",
+                  "value": "{{startTime}}"
+                },
+                {
+                  "key": "endTime",
+                  "value": "{{endTime}}"
+                }
+              ]
+            },
+            "description": "Slots with no overlapping RESERVED/OCCUPIED reservation in the window."
+          }
+        },
+        {
+          "name": "Occupancy prediction",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/predictions/occupancy?locationId={{locationId}}&date=2026-11-05",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "predictions",
+                "occupancy"
+              ],
+              "query": [
+                {
+                  "key": "locationId",
+                  "value": "{{locationId}}"
+                },
+                {
+                  "key": "date",
+                  "value": "2026-11-05"
+                }
+              ]
+            },
+            "description": "Served by the Python prediction service via the backend (Java fallback if Python is down). 24 hourly points + peak hour."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pricing & Booking",
+      "item": [
+        {
+          "name": "Price quote with promo (WELCOME10)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pricing/quote?slotId={{slotId}}&startTime={{startTime}}&endTime={{endTime}}&promoCode=WELCOME10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pricing",
+                "quote"
+              ],
+              "query": [
+                {
+                  "key": "slotId",
+                  "value": "{{slotId}}"
+                },
+                {
+                  "key": "startTime",
+                  "value": "{{startTime}}"
+                },
+                {
+                  "key": "endTime",
+                  "value": "{{endTime}}"
+                },
+                {
+                  "key": "promoCode",
+                  "value": "WELCOME10"
+                }
+              ]
+            },
+            "description": "Server-side pricing: base = ceil hours x rate; surge x1.25 at >=70% predicted occupancy, x1.50 at >=85%; promo discount applied after surge. WELCOME10 = 10% off, FLAT50 = \u20b950 off."
+          }
+        },
+        {
+          "name": "Create reservation",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reservations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reservations"
+              ]
+            },
+            "description": "Server recomputes all amounts (never trusts the client). Saves the new id into {{reservationId}}. Creates a PENDING payment for the fee.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": 1,\n  \"slotId\": 1,\n  \"startTime\": \"{{startTime}}\",\n  \"endTime\": \"{{endTime}}\",\n  \"promoCode\": \"WELCOME10\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var j = pm.response.json();",
+                  "if (j && j.id) { pm.collectionVariables.set('reservationId', j.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create SAME reservation again \u2192 expect 409",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reservations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reservations"
+              ]
+            },
+            "description": "DEMO: the double-booking prevention. Same slot + overlapping window must return 409 'already booked for the selected time window'.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicleId\": 1,\n  \"slotId\": 1,\n  \"startTime\": \"{{startTime}}\",\n  \"endTime\": \"{{endTime}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "My reservations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reservations/my",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reservations",
+                "my"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reschedule reservation",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reservations/{{reservationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reservations",
+                "{{reservationId}}"
+              ]
+            },
+            "description": "Only while RESERVED \u2014 run BEFORE Entry. The overlap check excludes this reservation itself; fee is recomputed and any promo on the original booking is removed.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startTime\": \"2026-11-05T14:00:00\",\n  \"endTime\": \"2026-11-05T16:00:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Entry",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reservations/{{reservationId}}/entry",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reservations",
+                "{{reservationId}}",
+                "entry"
+              ]
+            },
+            "description": "RESERVED \u2192 OCCUPIED, sets entryTime."
+          }
+        },
+        {
+          "name": "Exit",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reservations/{{reservationId}}/exit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reservations",
+                "{{reservationId}}",
+                "exit"
+              ]
+            },
+            "description": "OCCUPIED \u2192 COMPLETED, sets exitTime."
+          }
+        },
+        {
+          "name": "Cancel reservation",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reservations/{{reservationId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reservations",
+                "{{reservationId}}",
+                "cancel"
+              ]
+            },
+            "description": "Only from RESERVED. A PAID payment becomes REFUNDED, and the freed slot triggers waitlist promotion."
+          }
+        },
+        {
+          "name": "QR pass (PNG)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reservations/{{reservationId}}/qr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reservations",
+                "{{reservationId}}",
+                "qr"
+              ]
+            },
+            "description": "Returns image/png (~240px QR) encoding PARKGRID|RES:<id>|SLOT:<code>|PLATE:<plate>|FROM/TO. Use 'Send and Download' / Save Response in Postman to view it."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Get payment for reservation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reservations/{{reservationId}}/payment",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reservations",
+                "{{reservationId}}",
+                "payment"
+              ]
+            },
+            "description": "One payment row per reservation, created PENDING at booking time with amount = final fee."
+          }
+        },
+        {
+          "name": "Pay (simulated)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reservations/{{reservationId}}/pay",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reservations",
+                "{{reservationId}}",
+                "pay"
+              ]
+            },
+            "description": "SIMULATED payment \u2014 no real gateway. Sets status PAID, method SIMULATED_CARD and a TXN-xxxxxxxx reference. Paying twice \u2192 409."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Waitlist",
+      "item": [
+        {
+          "name": "Join waitlist",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/waitlist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "waitlist"
+              ]
+            },
+            "description": "Use when no slot is available for the window. Saves the entry id into {{waitlistId}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"locationId\": 1,\n  \"vehicleId\": 1,\n  \"startTime\": \"{{startTime}}\",\n  \"endTime\": \"{{endTime}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var j = pm.response.json();",
+                  "if (j && j.id) { pm.collectionVariables.set('waitlistId', j.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "My waitlist entries",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/waitlist/my",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "waitlist",
+                "my"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Claim offered slot",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/waitlist/{{waitlistId}}/claim",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "waitlist",
+                "{{waitlistId}}",
+                "claim"
+              ]
+            },
+            "description": "Only when the entry is OFFERED (a cancellation freed a matching slot). Offers expire after 15 minutes. Creates the reservation; 409 if the window no longer fits."
+          }
+        },
+        {
+          "name": "Cancel waitlist entry",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/waitlist/{{waitlistId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "waitlist",
+                "{{waitlistId}}",
+                "cancel"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "List my notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ]
+            },
+            "description": "Newest first, max 50. Types: BOOKING_CONFIRMED, PAYMENT_DONE, WAITLIST_OFFER, RESERVATION_NO_SHOW, RESERVATION_CANCELLED."
+          }
+        },
+        {
+          "name": "Unread count",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/unread-count",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "unread-count"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Mark all read",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications/read-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "read-all"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "Create review",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reviews",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reviews"
+              ]
+            },
+            "description": "Only for your OWN COMPLETED reservation (run after Exit). One review per reservation \u2014 a second one \u2192 409; non-completed \u2192 400. Replace the {{reservationId}} variable value with a completed reservation's id if needed.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reservationId\": {{reservationId}},\n  \"rating\": 5,\n  \"comment\": \"Smooth entry and exit, slot was easy to find.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reviews of a location",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/locations/{{locationId}}/reviews",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "locations",
+                "{{locationId}}",
+                "reviews"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Admin dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "dashboard"
+              ]
+            },
+            "description": "Totals, live available/reserved/occupied, occupancy %, today's reservations and revenue.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "All reservations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/reservations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reservations"
+              ]
+            },
+            "description": "Admin list; optional filters ?locationId=&status=&date=.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Export reservations CSV",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/reservations/export",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "reservations",
+                "export"
+              ]
+            },
+            "description": "Downloads reservations.csv (text/csv attachment) \u2014 use Save Response in Postman. Accepts the same locationId/status/date filters as the admin list.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List promo codes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/promos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "promos"
+              ]
+            },
+            "description": "Seeded: WELCOME10 (10% PERCENT) and FLAT50 (\u20b950 FLAT).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create promo code",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/promos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "promos"
+              ]
+            },
+            "description": "type is PERCENT (% off the surged amount) or FLAT (\u20b9 off).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"STUDENT20\",\n  \"type\": \"PERCENT\",\n  \"value\": 20,\n  \"maxUses\": 100,\n  \"expiresAt\": null,\n  \"active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admin waitlist",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/waitlist",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "waitlist"
+              ]
+            },
+            "description": "All waitlist entries, newest first.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

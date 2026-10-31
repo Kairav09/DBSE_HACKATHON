@@ -1,0 +1,7 @@
+# FastAPI chosen over Flask: it is the framework named in docs/ARCHITECTURE.md,
+# installs cleanly, and gives typed query params + automatic validation for free.
+# No pandas: the occupancy math is simple grouping/averaging, done in pure
+# stdlib (prediction.py) so installs stay light and fast.
+fastapi>=0.115
+uvicorn[standard]>=0.30
+PyMySQL>=1.1

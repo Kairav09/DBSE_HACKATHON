@@ -1,0 +1,79 @@
+# ParkGrid — full stack in Docker: MySQL 8 + Spring Boot backend + Python
+# prediction service + React frontend (nginx).
+# Usage:  docker compose up --build      → app at http://localhost:5173
+#         docker compose down -v         → stop and wipe the database volume
+# See docs/DOCKER.md. Demo accounts: admin@smartparking.local/admin123,
+# user1@example.com/user123 (created by database/seed.sql on first boot).
+
+services:
+  mysql:
+    image: mysql:8
+    container_name: parkgrid-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-parkgrid_root}
+      MYSQL_DATABASE: smart_parking
+      TZ: Asia/Kolkata
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # Init scripts run once, in filename order, on a fresh volume only.
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$$MYSQL_ROOT_PASSWORD\""]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  python-service:
+    build: ./python-service
+    container_name: parkgrid-python
+    restart: unless-stopped
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: smart_parking
+      DB_USERNAME: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-parkgrid_root}
+    ports:
+      - "8000:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  backend:
+    build: ./backend
+    container_name: parkgrid-backend
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/smart_parking?useSSL=false&serverTimezone=Asia/Kolkata&allowPublicKeyRetrieval=true
+      DB_USERNAME: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-parkgrid_root}
+      PREDICTION_SERVICE_URL: http://python-service:8000
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      python-service:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # The browser calls the backend directly, so this must be a
+        # browser-reachable URL (host-mapped port), not the compose hostname.
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+    container_name: parkgrid-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
